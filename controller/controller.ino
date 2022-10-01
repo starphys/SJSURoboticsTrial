@@ -4,13 +4,11 @@
 */
 #include <Wire.h>
 
-const int MPU = 0x68; // MPU6050 I2C address
+const int MPU = 0x69; // MPU6050 I2C address
 
 float AccX, AccY, AccZ;
 
 void setup() {
-
-
   Serial.begin(19200);
   
   //reset and wakeup device
@@ -19,7 +17,6 @@ void setup() {
   Wire.write(0x6B);                  // Talk to the register 6B
   Wire.write(0x80);                  // Set reset bit in register 6B to 1
   Wire.endTransmission(true);        //end the transmission
-
 }
 
 void loop() {
@@ -41,4 +38,5 @@ void loop() {
   Serial.print(", AccZ: ");
   Serial.print(AccZ);
   Serial.print("\n");
-  }
+}
+
