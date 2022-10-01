@@ -27,9 +27,13 @@ void loop() {
   Wire.endTransmission(false);
   Wire.requestFrom(MPU, 6, true);  // Read 6 registers total, each axis value is stored in 2 registers
 
-  AccX = (Wire.read() << 8 | Wire.read());  // X-axis value
-  AccY = (Wire.read() << 8 | Wire.read());  // Y-axis value
-  AccZ = (Wire.read() << 8 | Wire.read());  // Z-axis value
+  AccX = (Wire.read() << 8 | Wire.read()) / 16384.0;  // X-axis value
+  AccY = (Wire.read() << 8 | Wire.read()) / 16384.0;  // Y-axis value
+  AccZ = (Wire.read() << 8 | Wire.read()) / 16384.0; // Z-axis value
+
+//http://robo.sntiitk.in/2017/12/21/Beginners-Guide-to-IMU.html
+  float roll = (180 * atan(AccY / sqrt(pow(AccX, 2) + pow(AccZ, 2)))/ PI);
+  float pitch = (180 * atan(-1 * AccX / sqrt(pow(AccY, 2) + pow(AccZ, 2)))/ PI);
 
   Serial.print("AccX: ");
   Serial.print(AccX);
@@ -37,5 +41,9 @@ void loop() {
   Serial.print(AccY);
   Serial.print(", AccZ: ");
   Serial.print(AccZ);
+  Serial.print(", roll: ");
+  Serial.print(roll);
+  Serial.print(", pitch: ");
+  Serial.print(pitch);
   Serial.print("\n");
 }
