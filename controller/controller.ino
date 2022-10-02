@@ -7,6 +7,8 @@
 
 Servo servo1;
 int pos = 0;
+int angle = 90;
+int errorRoll = 6.3;
 
 const int MPU = 0x68;  // MPU6050 I2C address
 float AccX, AccY, AccZ;
@@ -37,14 +39,16 @@ void loop() {
   AccZ = (Wire.read() << 8 | Wire.read()) / 16384.0; // Z-axis value
 
   //http://robo.sntiitk.in/2017/12/21/Beginners-Guide-to-IMU.html
+  //Determine pitch and roll
   float pitch = (-180 * atan(AccY / sqrt(pow(AccX, 2) + pow(AccZ, 2)))/ PI);
-  float roll = (180 * atan(AccX / sqrt(pow(AccY, 2) + pow(AccZ, 2)))/ PI);
+  float roll = (180 * atan(AccX / sqrt(pow(AccY, 2) + pow(AccZ, 2)))/ PI) + errorRoll;
 
   // tell servo to point up (6.5 accounts for MPU mounted at angle)
-  servo1.write(90 + 6.5 - roll);         
+  servo1.write(angle - roll);         
   delay(10);
 
 
+  //Monitoring
   Serial.print("AccX: ");
   Serial.print(AccX);
   Serial.print(", AccY: ");
