@@ -22,6 +22,7 @@ int errorRoll = 6.3;
 //Globals for MPU
 const int MPU = 0x68;  // MPU6050 I2C address
 float AccX, AccY, AccZ;
+float roll, pitch;
 
 void setup() {
   Serial.begin(19200);
@@ -38,7 +39,22 @@ void setup() {
 }
 
 void loop() {
+  //Use MPU to determine current roll of system
+  getRollFromMPU();
 
+  //Accept user input for default angle between -90 and +90
+  recvWithEndMarker();
+  angle = getUserAngle();
+
+  //Tell servo to point up (6.5 accounts for MPU mounted at angle)
+  servo1.write(angle + servoOffset - roll);         
+  delay(10);
+
+  //Monitoring
+  outputData();
+}
+
+void getRollFromMPU() {
   //Accelerometer data stored in 6 contiguous registers in 3 sets of 2 starting with 3B
   Wire.beginTransmission(MPU);
   Wire.write(0x3B);  //(ACCEL_XOUT_H)
@@ -51,29 +67,8 @@ void loop() {
 
   //http://robo.sntiitk.in/2017/12/21/Beginners-Guide-to-IMU.html
   //Determine pitch and roll
-  float pitch = (-180 * atan(AccY / sqrt(pow(AccX, 2) + pow(AccZ, 2)))/ PI);
-  float roll = (180 * atan(AccX / sqrt(pow(AccY, 2) + pow(AccZ, 2)))/ PI) + errorRoll;
-
-  //Accept user input for default angle between -90 and +90
-  recvWithEndMarker();
-  angle = getUserAngle();
-
-  // tell servo to point up (6.5 accounts for MPU mounted at angle)
-  servo1.write(angle + servoOffset - roll);         
-  delay(10);
-
-  //Monitoring
-  Serial.print("AccX: ");
-  Serial.print(AccX);
-  Serial.print(", AccY: ");
-  Serial.print(AccY);
-  Serial.print(", AccZ: ");
-  Serial.print(AccZ);
-  Serial.print(", roll: ");
-  Serial.print(roll);
-  Serial.print(", pitch: ");
-  Serial.print(pitch);
-  Serial.print("\n");
+  pitch = (-180 * atan(AccY / sqrt(pow(AccX, 2) + pow(AccZ, 2)))/ PI);
+  roll = (180 * atan(AccX / sqrt(pow(AccY, 2) + pow(AccZ, 2)))/ PI) + errorRoll;
 }
 
 //https://forum.arduino.cc/t/serial-input-basics-updated/382007/3
@@ -111,4 +106,18 @@ int getUserAngle() {
         }
     }
     return angle;
+}
+
+void outputData() {
+  Serial.print("AccX: ");
+  Serial.print(AccX);
+  Serial.print(", AccY: ");
+  Serial.print(AccY);
+  Serial.print(", AccZ: ");
+  Serial.print(AccZ);
+  Serial.print(", roll: ");
+  Serial.print(roll);
+  Serial.print(", pitch: ");
+  Serial.print(pitch);
+  Serial.print("\n");
 }
