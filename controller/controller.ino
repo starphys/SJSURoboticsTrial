@@ -3,9 +3,14 @@
   and Gyroscope Sensor Tutorial by Dejan, https://howtomechatronics.com
 */
 #include <Wire.h>
+#include <Servo.h>
+
+Servo servo1;
+int pos = 0;
+int angle = 90;
+int errorRoll = 6.3;
 
 const int MPU = 0x68;  // MPU6050 I2C address
-
 float AccX, AccY, AccZ;
 
 void setup() {
@@ -17,6 +22,8 @@ void setup() {
   Wire.write(0x6B);             // Talk to the register 6B
   Wire.write(0x00);             // Set reset bit in register 6B to 1
   Wire.endTransmission(true);   //end the transmission
+
+  servo1.attach(4);
 }
 
 void loop() {
@@ -31,10 +38,17 @@ void loop() {
   AccY = (Wire.read() << 8 | Wire.read()) / 16384.0;  // Y-axis value
   AccZ = (Wire.read() << 8 | Wire.read()) / 16384.0; // Z-axis value
 
-//http://robo.sntiitk.in/2017/12/21/Beginners-Guide-to-IMU.html
-  float roll = (180 * atan(AccY / sqrt(pow(AccX, 2) + pow(AccZ, 2)))/ PI);
-  float pitch = (180 * atan(-1 * AccX / sqrt(pow(AccY, 2) + pow(AccZ, 2)))/ PI);
+  //http://robo.sntiitk.in/2017/12/21/Beginners-Guide-to-IMU.html
+  //Determine pitch and roll
+  float pitch = (-180 * atan(AccY / sqrt(pow(AccX, 2) + pow(AccZ, 2)))/ PI);
+  float roll = (180 * atan(AccX / sqrt(pow(AccY, 2) + pow(AccZ, 2)))/ PI) + errorRoll;
 
+  // tell servo to point up (6.5 accounts for MPU mounted at angle)
+  servo1.write(angle - roll);         
+  delay(10);
+
+
+  //Monitoring
   Serial.print("AccX: ");
   Serial.print(AccX);
   Serial.print(", AccY: ");
