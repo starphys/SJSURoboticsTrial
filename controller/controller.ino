@@ -30,7 +30,7 @@ void setup() {
   Wire.begin();                 
   Wire.beginTransmission(MPU);  // MPU=0x68
   Wire.write(0x6B);             
-  Wire.write(0x80);             // Set reset bit in register 6B to 1
+  Wire.write(0x00);             // Set reset bit in register 6B to 0
   Wire.endTransmission(true);   
 
   //Connect servo
