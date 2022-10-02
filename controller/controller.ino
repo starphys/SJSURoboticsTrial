@@ -5,24 +5,35 @@
 #include <Wire.h>
 #include <Servo.h>
 
+//Globals for user input
+const byte numChars = 32;
+char receivedChars[numChars];
+boolean newData = false;
+int dataNumber = 0;
+int angle = 0;
+
+//Globals for servo
 Servo servo1;
 int pos = 0;
-int angle = 90;
+int servoOffset = 90;
+
 int errorRoll = 6.3;
 
+//Globals for MPU
 const int MPU = 0x68;  // MPU6050 I2C address
 float AccX, AccY, AccZ;
 
 void setup() {
   Serial.begin(19200);
 
-  //reset and wakeup device
-  Wire.begin();                 // Initialize comunication
-  Wire.beginTransmission(MPU);  // Start communication with MPU6050 // MPU=0x68
-  Wire.write(0x6B);             // Talk to the register 6B
-  Wire.write(0x00);             // Set reset bit in register 6B to 1
-  Wire.endTransmission(true);   //end the transmission
+  //Reset and wake up MPU
+  Wire.begin();                 
+  Wire.beginTransmission(MPU);  // MPU=0x68
+  Wire.write(0x6B);             
+  Wire.write(0x00);             // Set reset bit in register 6B to 0
+  Wire.endTransmission(true);   
 
+  //Connect servo
   servo1.attach(4);
 }
 
@@ -43,10 +54,13 @@ void loop() {
   float pitch = (-180 * atan(AccY / sqrt(pow(AccX, 2) + pow(AccZ, 2)))/ PI);
   float roll = (180 * atan(AccX / sqrt(pow(AccY, 2) + pow(AccZ, 2)))/ PI) + errorRoll;
 
-  // tell servo to point up (6.5 accounts for MPU mounted at angle)
-  servo1.write(angle - roll);         
-  delay(10);
+  //Accept user input for default angle between -90 and +90
+  recvWithEndMarker();
+  angle = getUserAngle();
 
+  // tell servo to point up (6.5 accounts for MPU mounted at angle)
+  servo1.write(angle + servoOffset - roll);         
+  delay(10);
 
   //Monitoring
   Serial.print("AccX: ");
@@ -60,4 +74,41 @@ void loop() {
   Serial.print(", pitch: ");
   Serial.print(pitch);
   Serial.print("\n");
+}
+
+//https://forum.arduino.cc/t/serial-input-basics-updated/382007/3
+void recvWithEndMarker() {
+    static byte ndx = 0;
+    char endMarker = '\n';
+    char rc;
+    if (Serial.available() > 0) {
+        rc = Serial.read();
+
+        if (rc != endMarker) {
+            receivedChars[ndx] = rc;
+            ndx++;
+            if (ndx >= numChars) {
+                ndx = numChars - 1;
+            }
+        }
+        else {
+            receivedChars[ndx] = '\0'; // terminate the string
+            ndx = 0;
+            newData = true;
+        }
+    }
+}
+
+//https://forum.arduino.cc/t/serial-input-basics-updated/382007/3
+//If user enters bad input, return current angle
+int getUserAngle() {
+    if (newData == true) {
+        dataNumber = 0;             // new for this version
+        dataNumber = atoi(receivedChars);   // new for this version
+        newData = false;
+        if(dataNumber >= -90 && dataNumber <= 90) {
+          return dataNumber;
+        }
+    }
+    return angle;
 }
